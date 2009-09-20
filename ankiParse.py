@@ -2,15 +2,28 @@ from HTMLParser import HTMLParser
 import re
 
 # A html parser to parse the html tags in anki fields. Helps identify
-# media in an anki deck.
+# media in an anki deck. Can also strip html
 
 class ankiParse(HTMLParser):
 	# Init
 	def __init__(self):
+		# Reset 
+		self.reset()
+		
 		# Just need to initiate some vars
 		self.media = []
 		
+		# Vars for stripping
+		self.fed = []
+		
 		HTMLParser.__init__(self)
+			
+	# Strip tags
+	def handle_data(self, d):
+		self.fed.append(d)
+		
+	def get_data(self):
+		return ''.join(self.fed)
 	
 	# I have know idea if this will work, overide the feed() function
 	# so that we can parse anki's custom sound tags ([sound:filename])
@@ -18,7 +31,7 @@ class ankiParse(HTMLParser):
 		# Try and find sound tag
 		
 		# Compile a regex expression
-		p = re.compile(r"\[sound:(\w+.\w+)\]")
+		p = re.compile(r"(.*)\[sound:(\w+.\w+)\](.*)")
 		
 		# Search through data for a match
 		matched = p.match(data)
@@ -26,7 +39,11 @@ class ankiParse(HTMLParser):
 		# If we found a match
 		if matched != None:
 			# Extract data and call handle_startendtag
-			self.handle_startendtag("sound", [('src', matched.group(1))])
+			self.handle_startendtag("sound", [('src', matched.group(2))])
+			
+			# Feed the rest of the string.
+			self.feed(matched.group(1))
+			self.feed(matched.group(3))
 			
 			# Now return so we don't have it be parsed again
 			return
@@ -58,4 +75,8 @@ class ankiParse(HTMLParser):
 		
 		HTMLParser.close(self)
 		
+def strip_tags(html):
+    s = ankiParse()
+    s.feed(html)
+    return s.get_data()
 

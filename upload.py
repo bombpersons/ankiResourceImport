@@ -58,7 +58,7 @@ class Upload:
 		
 		# Login
 		br.submit()
-
+		
 		# Now loop for every sentence, and post the data
 		for sentence in self.sentences:
 			
@@ -72,9 +72,10 @@ class Upload:
 			br['other_language'] = sentence.language
 			
 			#Figure out where to put uploads
-			for media in sentence.media:
-				control = br.form.find_control(name=self.uploadType(media))
-				control.add_file(open(media), 'multipart/form-data', media)
+			if media:
+				for media in sentence.media:
+					control = br.form.find_control(name=self.uploadType(media))
+					control.add_file(open(media), 'multipart/form-data', media)
 
 			
 			# Submit

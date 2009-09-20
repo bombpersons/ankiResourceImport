@@ -2,33 +2,13 @@
 from upload import Upload
 from search import Search
 from sentence import Sentence
-from ankiParse import ankiParse
+from ankiParse import ankiParse, strip_tags
 
 import anki
 from anki.cards import Card
 from anki.facts import Fact
 
 import os
-
-
-# Strips HTML tags from feilds (taken from 
-# http://stackoverflow.com/questions/753052/strip-html-from-strings-in-python)
-from HTMLParser import HTMLParser
-
-class MLStripper(HTMLParser):
-    def __init__(self):
-        self.reset()
-        self.fed = []
-    def handle_data(self, d):
-        self.fed.append(d)
-    def get_data(self):
-        return ''.join(self.fed)
-
-def strip_tags(html):
-    s = MLStripper()
-    s.feed(html)
-    return s.get_data()
-
 
 # This class inherits upload and adds anki upload support.
 class ankiUpload(Upload):
@@ -87,9 +67,6 @@ class ankiUpload(Upload):
 					newSentence.language = self.language
 					newSentence.media = full_media
 					
-					#print newSentence.sentence
-					print newSentence.media
-					
 					# Append the sentence	
 					sentences.append(newSentence)
 					
@@ -119,9 +96,9 @@ class ankiUpload(Upload):
 				for sentence in sentences:
 					sentences[i].sentence = strip_tags(sentence.sentence)
 					i += 1
-				
+					
 				# Now add these to the 
-				self.sentences = sentences
+				self.sentences.extend(sentences)
 					
 		# We should be done now, now everything is up to the base
 		# upload function.

@@ -3,7 +3,7 @@ from ankiUpload import ankiUpload
 if __name__ == "__main__":
 	uploader = ankiUpload()
 	uploader.sentence_field.update({
-		'subs2srs': 'Expression',
+		'Basic': 'Front',
 	})
 	
 	uploader.load("deck.anki")
@@ -11,4 +11,4 @@ if __name__ == "__main__":
 	uploader.username = "test"
 	uploader.password = "test"
 	
-	uploader.upload()
+	uploader.upload(media=True)

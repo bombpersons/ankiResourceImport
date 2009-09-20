@@ -1,19 +1,18 @@
-# import standard python modules
-from xml import sax
-
 # import upload so we can inherit the class
 from upload import Upload
 from search import Search
 from sentence import Sentence
-from ankiXML import AnkiContentHandler
+from ankiParse import ankiParse
 
 import anki
 from anki.cards import Card
 from anki.facts import Fact
 
+import os
+
 
 # Strips HTML tags from feilds (taken from 
-# http://stackoverflow.com/questions/753052/strip-html-from-strings-in-python
+# http://stackoverflow.com/questions/753052/strip-html-from-strings-in-python)
 from HTMLParser import HTMLParser
 
 class MLStripper(HTMLParser):
@@ -58,17 +57,42 @@ class ankiUpload(Upload):
 			
 			# First check if we know which field to use in this model
 			if model.name in self.sentence_field:
-				# Grab all facts
+				# Grab all facts ids
 				fact_ids = deck.s.all("select id from facts where modelId = " + str(model.id))
 				
+				# Get facts from the id's
 				facts = []
 				for fact_id in fact_ids:
 					facts.append(deck.s.query(Fact).get(fact_id[0]))
 				
-				# Get the sentences from the facts
+				# Get the sentences from the facts, and media.
 				sentences = []
+				parser = ankiParse()
 				for fact in facts:
-					sentences.append(fact[self.sentence_field[model.name]])
+					newSentence = Sentence(sentence=fact[self.sentence_field[model.name]])
+					media = []
+					full_media = []
+					for field in model.fieldModels:
+						parser.feed(fact[field.name])
+						media.extend(parser.media)
+						parser.close()
+					
+					# Add full path to media
+					del full_media[:]
+					for m in media:
+						#print os.path.join(deck.mediaDir(), m)
+						full_media.append(os.path.join(deck.mediaDir(), m))
+					
+					# Put in values
+					newSentence.language = self.language
+					newSentence.media = full_media
+					
+					#print newSentence.sentence
+					print newSentence.media
+					
+					# Append the sentence	
+					sentences.append(newSentence)
+					
 				
 				# Ok, now if there are search terms search, search the
 				# sentences.
@@ -78,29 +102,26 @@ class ankiUpload(Upload):
 					searcher.search_terms = self.search_terms
 				
 					# Put the sentences into the searcher
-					searcher.raw_sentences = sentences
-					
+					for sentence in sentences:
+						searcher.raw_sentences.append(sentence.sentence)
+										
 					# Search
 					searcher.search()
 					
 					# Now update sentences to contain the results
-					sentences.clear()
-					sentences = searcher.sentences
+					for sentence in sentences:
+						if sentence.sentence not in searcher.sentences:
+							sentences.remove(sentence)
 					
 				# Before we add these sentences, we need to strip any
 				# xml / html from them
 				i = 0
 				for sentence in sentences:
-					sentences[i] = strip_tags(sentence)
+					sentences[i].sentence = strip_tags(sentence.sentence)
 					i += 1
 				
 				# Now add these to the 
-				for sentence in sentences:
-					new_sentence = Sentence()
-					new_sentence.sentence = sentence
-					new_sentence.language = self.language
-					
-					self.sentences.append(new_sentence)
+				self.sentences = sentences
 					
 		# We should be done now, now everything is up to the base
 		# upload function.

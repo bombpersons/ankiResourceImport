@@ -1,4 +1,5 @@
 # Import libraries we need
+import os
 from mechanize import Browser
 
 from sentence import Sentence
@@ -16,6 +17,14 @@ class Upload:
 		self.new_sentence_url = "http://anki-resource.uk.to/sentences/new/"
 		self.use_media = False # Don't use media by default.
 		self.language = "" # Language the sentences are in.
+		
+		# Types
+		self.types = {
+			'Image': ('.png', '.bmp', '.jpg', '.jpeg', '.svg'),
+			'Video': ('.avi', '.mpeg', '.mpg', '.mp4', '.ogv', '.flv'),
+			'Sound': ('.mp3', '.ogg', '.flac'),
+		}
+		
 		
 		# Vars used by other functions
 		self.sentences = [] # Sentences to upload to the server
@@ -50,7 +59,7 @@ class Upload:
 		# Login
 		br.submit()
 
-		# Now loop for every sentence, using urllib to post it
+		# Now loop for every sentence, and post the data
 		for sentence in self.sentences:
 			
 			# Go to add sentence page
@@ -62,5 +71,27 @@ class Upload:
 			#br['language'][2] = True
 			br['other_language'] = sentence.language
 			
+			#Figure out where to put uploads
+			for media in sentence.media:
+				control = br.form.find_control(name=self.uploadType(media))
+				control.add_file(open(media), 'multipart/form-data', media)
+
+			
 			# Submit
 			br.submit()
+			
+	#Helpers------------------------------------------------------------
+	# Helper functions 
+	
+	# uploadType - finds out what type of file a filename is.
+	def uploadType(self, filename):
+		if filename.endswith(self.types['Image']):
+			return 'image'
+		elif filename.endswith(self.types['Video']):
+			return 'video'
+		elif filename.endswith(self.types['Sound']):
+			return 'sound'
+			
+		else:
+			return ""
+		

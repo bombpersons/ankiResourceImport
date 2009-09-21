@@ -68,8 +68,9 @@ class Upload:
 			# Fill in the form
 			br.select_form(nr=0)
 			br['sentence'] = sentence.sentence.encode("utf-8")
-			#br['language'][2] = True
+			br['language'] = ['Other']
 			br['other_language'] = sentence.language
+			br['tags'] = sentence.tags
 			
 			#Figure out where to put uploads
 			if media:

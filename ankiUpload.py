@@ -19,6 +19,11 @@ class ankiUpload(Upload):
 								 # use as the sentence. Only fields in
 								 # models in the dictionary will be used.
 								 # In the form { modelname: fieldname }
+								 						 
+		self.tag_strip = [		# Tags to strip from tags obtained from cards.
+				'Media-Missing', # Remove anki specific tags that we don't want on the site.
+				'Leech',
+		]
 								 
 		
 		# Call the usual __init__ function
@@ -49,23 +54,41 @@ class ankiUpload(Upload):
 				sentences = []
 				parser = ankiParse()
 				for fact in facts:
+					# The new sentence
 					newSentence = Sentence(sentence=fact[self.sentence_field[model.name]])
-					media = []
-					full_media = []
+					media = [] # Temperory media without full path
+					full_media = [] # Media with full path
+					
+					# Loop through fields in fact searching for media
 					for field in model.fieldModels:
 						parser.feed(fact[field.name])
 						media.extend(parser.media)
 						parser.close()
 					
-					# Add full path to media
-					del full_media[:]
-					for m in media:
-						#print os.path.join(deck.mediaDir(), m)
-						full_media.append(os.path.join(deck.mediaDir(), m))
+					# If this anki deck has a media directory add that to media path
+					if deck.mediaDir() != None:					
+						# Add full path to media
+						del full_media[:]
+						for m in media:
+							#print os.path.join(deck.mediaDir(), m)
+							if deck.mediaDir():
+								path = deck.mediaDir
+							else:
+								path = ""
+							
+							full_media.append(os.path.join(path, m))
+							
+						newSentence.media = full_media
 					
-					# Put in values
+					# Sentence Language
 					newSentence.language = self.language
-					newSentence.media = full_media
+					
+					# Remove tags that we don't want (anki specific tags, etc)
+					tags = fact.tags
+					for tag in self.tag_strip:
+						tags = tags.strip(tag)
+					
+					newSentence.tags = tags
 					
 					# Append the sentence	
 					sentences.append(newSentence)

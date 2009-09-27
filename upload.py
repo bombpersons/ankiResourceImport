@@ -72,6 +72,8 @@ class Upload:
 			br['other_language'] = sentence.language
 			br['tags'] = sentence.tags
 			
+			print br['tags']
+			
 			#Figure out where to put uploads
 			if media:
 				for media in sentence.media:

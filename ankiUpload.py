@@ -72,7 +72,7 @@ class ankiUpload(Upload):
 						for m in media:
 							#print os.path.join(deck.mediaDir(), m)
 							if deck.mediaDir():
-								path = deck.mediaDir
+								path = deck.mediaDir()
 							else:
 								path = ""
 							
@@ -89,6 +89,8 @@ class ankiUpload(Upload):
 						tags = tags.strip(tag)
 					
 					newSentence.tags = tags
+					
+					print newSentence.tags
 					
 					# Append the sentence	
 					sentences.append(newSentence)

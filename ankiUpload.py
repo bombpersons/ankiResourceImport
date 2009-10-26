@@ -15,6 +15,7 @@ class ankiUpload(Upload):
 	def __init__(self):
 		# Default variables that are only used in this class
 		self.search_terms = [] # Empy by default (empty = don't search)
+		self.search_tags = [] # Only use cards with these tags (empty = ignore)
 		self.sentence_field = {} # Dictionary containing which field to
 								 # use as the sentence. Only fields in
 								 # models in the dictionary will be used.
@@ -23,8 +24,9 @@ class ankiUpload(Upload):
 		self.tag_strip = [		# Tags to strip from tags obtained from cards.
 				'Media-Missing', # Remove anki specific tags that we don't want on the site.
 				'Leech',
+				'Extr',
 		]
-								 
+		
 		
 		# Call the usual __init__ function
 		Upload.__init__(self)
@@ -88,10 +90,8 @@ class ankiUpload(Upload):
 					for tag in self.tag_strip:
 						tags = tags.strip(tag)
 					
-					newSentence.tags = tags
-					
-					print newSentence.tags
-					
+					newSentence.tags = tags.split()
+
 					# Append the sentence	
 					sentences.append(newSentence)
 					
@@ -115,10 +115,20 @@ class ankiUpload(Upload):
 						if sentence.sentence not in searcher.sentences:
 							sentences.remove(sentence)
 					
+				#get rid of all sentences that don't have these tags
+				if len(self.search_tags) > 0:
+					for sentence in sentences[:]:
+						removed = False
+						for tag in self.search_tags:
+							if tag not in sentence.tags and not removed:
+								sentences.remove(sentence)
+								removed = True
+					
 				# Before we add these sentences, we need to strip any
 				# xml / html from them
 				i = 0
 				for sentence in sentences:
+					print sentence.media
 					sentences[i].sentence = strip_tags(sentence.sentence)
 					i += 1
 					

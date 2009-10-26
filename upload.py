@@ -15,6 +15,11 @@ class Upload:
 		self.password = ""
 		
 		self.new_sentence_url = "http://anki-resource.uk.to/sentences/new/"
+		
+		self.new_list_url = "http://anki-resource.uk.to/lists/newlist/"
+		self.list = ""			# If blank no list is used, if doesn't exist, a new list will be made.
+		self.open_list = False
+		
 		self.use_media = False # Don't use media by default.
 		self.language = "" # Language the sentences are in.
 		
@@ -59,6 +64,23 @@ class Upload:
 		# Login
 		br.submit()
 		
+		# If we need to add to a list, see if it already exists
+		if self.list != "":
+			br.open(self.new_sentence_url)
+			br.select_form(nr=0)
+			if self.list not in self.getListBoxItems('list', br):
+				
+				# Make the list
+				br.open(self.new_list_url)
+				
+				# Fill out the form
+				br.select_form(nr=0)
+				br['name'] = self.list
+				br['open'] = self.open_list
+				
+				# Submit
+				print br.submit().read()
+		
 		# Now loop for every sentence, and post the data
 		for sentence in self.sentences:
 			
@@ -70,13 +92,24 @@ class Upload:
 			br['sentence'] = sentence.sentence.encode("utf-8")
 			br['language'] = ['Other']
 			br['other_language'] = sentence.language
-			br['tags'] = sentence.tags
 			
-			print br['tags']
+			tags = ""
+			for tag in sentence.tags:
+				tags += tag + " "
+			br['tags'] = tags
+			
+			if self.list != "":
+				# Get the lists available
+				lists = self.getListBoxItems('list', br)
+				
+				# And set the list
+				print br['list']
+				br['list'] = [str(lists[self.list])]
 			
 			#Figure out where to put uploads
 			if media:
 				for media in sentence.media:
+					print media
 					control = br.form.find_control(name=self.uploadType(media))
 					control.add_file(open(media), 'multipart/form-data', media)
 
@@ -98,4 +131,13 @@ class Upload:
 			
 		else:
 			return ""
+			
+	# getListBoxItems - gets a dictionary of possible items in a listbox
+	def getListBoxItems(self, listBoxName, br):
+		dict = {}
+		for i in br.form.possible_items(listBoxName):
+			br[listBoxName] = [i,]
+			dict.update({br.form.get_value_by_label(listBoxName)[0]: i})
+			
+		return dict
 		
